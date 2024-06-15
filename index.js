@@ -1,14 +1,12 @@
 const { Client, GatewayIntentBits, ActivityType, TextChannel } = require('discord.js');
 require('dotenv').config();
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 
-// Initialize Discord client with specific intents
+// Initialize Discord client with all intents
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+  intents: Object.keys(GatewayIntentBits).map((intent) => GatewayIntentBits[intent]),
 });
 
 // Set up Express server
@@ -22,9 +20,13 @@ app.listen(port, () => {
   console.log(`🔗 Powered By RTX`);
 });
 
-// Fixed status message
-const statusMessage = "WATCHING Greenville Roleplay Complex";
-const channelId = process.env.CHANNEL_ID; // Set this to your channel ID from .env file
+// Status messages array
+const statusMessages = [
+  "WATCHING Greenville Roleplay Complex"
+];
+
+let currentIndex = 0;
+const channelId = 'YOUR_CHANNEL_ID_HERE'; // Set this to your channel ID
 
 // Login function
 async function login() {
@@ -37,26 +39,25 @@ async function login() {
   }
 }
 
-// Function to set status and send message
-async function setStatusAndSendMessage() {
-  try {
-    await client.user.setPresence({
-      activities: [{ name: statusMessage, type: ActivityType.Watching }],
-      status: 'dnd',
-    });
-    console.log('Presence set successfully.');
+// Function to update status and send messages
+function updateStatusAndSendMessages() {
+  const currentStatus = statusMessages[currentIndex];
+  const nextStatus = statusMessages[(currentIndex + 1) % statusMessages.length];
 
-    const textChannel = await client.channels.fetch(channelId);
+  client.user.setPresence({
+    activities: [{ name: currentStatus, type: ActivityType.Watching }],
+    status: 'dnd',
+  }).catch(console.error);
 
-    if (textChannel instanceof TextChannel) {
-      await textChannel.send(`Bot status is: ${statusMessage}`);
-      console.log('Message sent successfully.');
-    } else {
-      console.log('Text channel not found or invalid.');
-    }
-  } catch (error) {
-    console.error('Failed to set presence or send message:', error);
+  const textChannel = client.channels.cache.get(channelId);
+
+  if (textChannel instanceof TextChannel) {
+    textChannel.send(`Bot status is: ${currentStatus}`).catch(console.error);
+  } else {
+    console.log('Text channel not found or invalid.');
   }
+
+  currentIndex = (currentIndex + 1) % statusMessages.length;
 }
 
 // Event listener for when the bot is ready
@@ -64,7 +65,11 @@ client.once('ready', () => {
   console.log(`\x1b[36m%s\x1b[0m`, `|    ✅ Bot is ready as ${client.user.tag}`);
   console.log(`\x1b[36m%s\x1b[0m`, `|    ✨HAPPY NEW YEAR MY DEAR FAMILY`);
   console.log(`\x1b[36m%s\x1b[0m`, `|    ❤️WELCOME TO 2024`);
-  setStatusAndSendMessage();
+  updateStatusAndSendMessages();
+
+  setInterval(() => {
+    updateStatusAndSendMessages();
+  }, 10000); // Adjust the interval as needed
 });
 
 // Start the bot
