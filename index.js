@@ -3,11 +3,13 @@ require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+
+// Initialize Discord client with all intents
 const client = new Client({
-  intents: Object.keys(GatewayIntentBits).map((a) => {
-    return GatewayIntentBits[a];
-  }),
+  intents: Object.keys(GatewayIntentBits).map((intent) => GatewayIntentBits[intent]),
 });
+
+// Set up Express server
 const app = express();
 const port = 3000;
 app.get('/', (req, res) => {
@@ -18,14 +20,12 @@ app.listen(port, () => {
   console.log(`🔗 Powered By RTX`);
 });
 
-// Updated statusMessages array with the invite link
-const statusMessages = [
-  "WATCHING Greenville Roleplay Complex"
-];
+// Fixed status message
+const statusMessage = "WATCHING Greenville Roleplay Complex";
 
-let currentIndex = 0;
-const channelId = '';
+const channelId = 'YOUR_CHANNEL_ID_HERE'; // Set this to your channel ID
 
+// Login function
 async function login() {
   try {
     await client.login(process.env.TOKEN);
@@ -36,35 +36,29 @@ async function login() {
   }
 }
 
-function updateStatusAndSendMessages() {
-  const currentStatus = statusMessages[currentIndex];
-  const nextStatus = statusMessages[(currentIndex + 1) % statusMessages.length];
-
+// Function to set status and send message
+function setStatusAndSendMessage() {
   client.user.setPresence({
-    activities: [{ name: currentStatus, type: ActivityType.Watching }],
+    activities: [{ name: statusMessage, type: ActivityType.Watching }],
     status: 'dnd',
-  });
+  }).catch(console.error);
 
   const textChannel = client.channels.cache.get(channelId);
 
   if (textChannel instanceof TextChannel) {
-    textChannel.send(`Bot status is: ${currentStatus}`);
+    textChannel.send(`Bot status is: ${statusMessage}`).catch(console.error);
   } else {
     console.log('Text channel not found or invalid.');
   }
-
-  currentIndex = (currentIndex + 1) % statusMessages.length;
 }
 
+// Event listener for when the bot is ready
 client.once('ready', () => {
   console.log(`\x1b[36m%s\x1b[0m`, `|    ✅ Bot is ready as ${client.user.tag}`);
   console.log(`\x1b[36m%s\x1b[0m`, `|    ✨HAPPY NEW YEAR MY DEAR FAMILY`);
   console.log(`\x1b[36m%s\x1b[0m`, `|    ❤️WELCOME TO 2024`);
-  updateStatusAndSendMessages();
-
-  setInterval(() => {
-    updateStatusAndSendMessages();
-  }, 10000);
+  setStatusAndSendMessage();
 });
 
+// Start the bot
 login();
