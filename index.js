@@ -1,8 +1,6 @@
 const { Client, GatewayIntentBits, ActivityType, TextChannel } = require('discord.js');
 require('dotenv').config();
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 
 // Initialize Discord client with all intents
 const client = new Client({
@@ -22,7 +20,6 @@ app.listen(port, () => {
 
 // Fixed status message
 const statusMessage = "WATCHING Greenville Roleplay Complex";
-
 const channelId = 'YOUR_CHANNEL_ID_HERE'; // Set this to your channel ID
 
 // Login function
@@ -41,12 +38,16 @@ function setStatusAndSendMessage() {
   client.user.setPresence({
     activities: [{ name: statusMessage, type: ActivityType.Watching }],
     status: 'dnd',
-  }).catch(console.error);
+  }).catch((error) => {
+    console.error('Failed to set presence:', error);
+  });
 
   const textChannel = client.channels.cache.get(channelId);
 
   if (textChannel instanceof TextChannel) {
-    textChannel.send(`Bot status is: ${statusMessage}`).catch(console.error);
+    textChannel.send(`Bot status is: ${statusMessage}`).catch((error) => {
+      console.error('Failed to send message:', error);
+    });
   } else {
     console.log('Text channel not found or invalid.');
   }
