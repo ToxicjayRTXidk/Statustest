@@ -2,9 +2,13 @@ const { Client, GatewayIntentBits, ActivityType, TextChannel } = require('discor
 require('dotenv').config();
 const express = require('express');
 
-// Initialize Discord client with all intents
+// Initialize Discord client with specific intents
 const client = new Client({
-  intents: Object.keys(GatewayIntentBits).map((intent) => GatewayIntentBits[intent]),
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 // Set up Express server
@@ -20,7 +24,7 @@ app.listen(port, () => {
 
 // Fixed status message
 const statusMessage = "WATCHING Greenville Roleplay Complex";
-const channelId = 'YOUR_CHANNEL_ID_HERE'; // Set this to your channel ID
+const channelId = process.env.CHANNEL_ID; // Set this to your channel ID from .env file
 
 // Login function
 async function login() {
@@ -34,22 +38,24 @@ async function login() {
 }
 
 // Function to set status and send message
-function setStatusAndSendMessage() {
-  client.user.setPresence({
-    activities: [{ name: statusMessage, type: ActivityType.Watching }],
-    status: 'dnd',
-  }).catch((error) => {
-    console.error('Failed to set presence:', error);
-  });
-
-  const textChannel = client.channels.cache.get(channelId);
-
-  if (textChannel instanceof TextChannel) {
-    textChannel.send(`Bot status is: ${statusMessage}`).catch((error) => {
-      console.error('Failed to send message:', error);
+async function setStatusAndSendMessage() {
+  try {
+    await client.user.setPresence({
+      activities: [{ name: statusMessage, type: ActivityType.Watching }],
+      status: 'dnd',
     });
-  } else {
-    console.log('Text channel not found or invalid.');
+    console.log('Presence set successfully.');
+
+    const textChannel = await client.channels.fetch(channelId);
+
+    if (textChannel instanceof TextChannel) {
+      await textChannel.send(`Bot status is: ${statusMessage}`);
+      console.log('Message sent successfully.');
+    } else {
+      console.log('Text channel not found or invalid.');
+    }
+  } catch (error) {
+    console.error('Failed to set presence or send message:', error);
   }
 }
 
