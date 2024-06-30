@@ -1,10 +1,14 @@
-const { Client, GatewayIntentBits, ActivityType, TextChannel } = require('discord.js');
+const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
 require('dotenv').config();
 const express = require('express');
 
-// Initialize Discord client with all intents
+// Initialize Discord client with essential intents
 const client = new Client({
-  intents: Object.keys(GatewayIntentBits).map((intent) => GatewayIntentBits[intent]),
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 // Set up Express server
@@ -22,13 +26,20 @@ app.listen(port, () => {
   console.log(`🔗 Powered By RTX`);
 });
 
-// Array of status messages for the bot
-const statusMessages = [
-  "WATCHING Greenville Roleplay Complex"
-];
+const statusMessage = "WATCHING discord.gg/SFRC"; // Permanent status message
 
-let currentIndex = 0;
-const channelId = 'YOUR_CHANNEL_ID_HERE'; // Set this to your channel ID
+// Function to set the bot's status
+function setPermanentStatus() {
+  try {
+    client.user.setPresence({
+      activities: [{ name: statusMessage, type: ActivityType.Watching }],
+      status: 'dnd',
+    });
+    console.log(`\x1b[36m%s\x1b[0m`, `|    🚀 Bot status set to: ${statusMessage}`);
+  } catch (error) {
+    console.error('Failed to set presence:', error);
+  }
+}
 
 // Function to log in the bot
 async function login() {
@@ -41,48 +52,22 @@ async function login() {
   }
 }
 
-// Function to update the bot's status and send messages to a channel
-function updateStatusAndSendMessages() {
-  const currentStatus = statusMessages[currentIndex];
-  
-  // Update bot's presence/status
-  try {
-    client.user.setPresence({
-      activities: [{ name: currentStatus, type: ActivityType.Watching }],
-      status: 'dnd',
-    });
-
-    // Get the text channel by ID
-    const textChannel = client.channels.cache.get(channelId);
-
-    // Check if the channel is valid and send a message
-    if (textChannel instanceof TextChannel) {
-      textChannel.send(`Bot status is: ${currentStatus}`).catch(console.error);
-    } else {
-      console.log('Text channel not found or invalid.');
-    }
-  } catch (error) {
-    console.error('Failed to set presence or send message:', error);
-  }
-
-  // Update the index for the next status message
-  currentIndex = (currentIndex + 1) % statusMessages.length;
-}
-
 // Event listener for when the bot is ready
 client.once('ready', () => {
   console.log(`\x1b[36m%s\x1b[0m`, `|    ✅ Bot is ready as ${client.user.tag}`);
   console.log(`\x1b[36m%s\x1b[0m`, `|    ✨HAPPY NEW YEAR MY DEAR FAMILY`);
   console.log(`\x1b[36m%s\x1b[0m`, `|    ❤️WELCOME TO 2024`);
   
-  // Update status and send messages immediately upon startup
-  updateStatusAndSendMessages();
-
-  // Set an interval to update status and send messages periodically
-  setInterval(() => {
-    updateStatusAndSendMessages();
-  }, 10000); // Adjust the interval as needed
+  // Set status immediately upon startup
+  setPermanentStatus();
 });
+
+// Regularly reset the status to ensure permanence
+setInterval(() => {
+  if (client.user) {
+    setPermanentStatus();
+  }
+}, 60000); // Adjust the interval as needed (60 seconds here)
 
 // Start the bot by logging in
 login();
